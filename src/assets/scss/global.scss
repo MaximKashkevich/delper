@@ -1,0 +1,12 @@
+@import 'tailwindcss';
+@import './fonts.scss';
+@import './null.scss';
+@import './variables.scss';
+@import url('https://fonts.googleapis.com/css?family=Roboto');
+
+html * {
+	font-family: 'Roboto', sans-serif;
+}
+.layout-default__content {
+	min-height: 876px;
+}
