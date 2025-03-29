@@ -36,4 +36,6 @@ export default {
 <style lang="scss">
 //.app {
 //  background-color: var(--color-gray-light);
+
+
 //}</style>
