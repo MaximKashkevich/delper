@@ -21,6 +21,7 @@ export function addImageToContent(droppedImages, idCounter, element) {
 			highlights: 0,
 			shadows: 0,
 		},
+		isActive: false,
 	}
 	return {
 		droppedImages: [...droppedImages, newImage],

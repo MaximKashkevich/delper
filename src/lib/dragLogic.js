@@ -17,11 +17,11 @@ export const useDrag = () => {
 				if (draggingImage) {
 					draggingImage.x =
 						initialPosition.imageX + (e.clientX - initialPosition.cursorX)
+
 					draggingImage.y =
 						initialPosition.imageY + (e.clientY - initialPosition.cursorY)
 				}
 			}
-
 			const endDrag = () => {
 				document.removeEventListener('mousemove', handleMove)
 				document.removeEventListener('mouseup', endDrag)

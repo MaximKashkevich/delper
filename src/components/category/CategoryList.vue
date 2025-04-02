@@ -1,4 +1,5 @@
 <template>
+  <AppHeader />
   <div class="dashboard-container">
     <div class="sidebar-menu">
       <!-- Первая часть: вертикальная полоса -->
@@ -11,7 +12,7 @@
       </div>
 
       <!-- Вторая часть: содержимое -->
-      <div class="sidebar-content">
+      <div class="sidebar-content" v-if='shaw.sidebar'>
         <!-- Поиск -->
         <div class="search-bar">
           <input type="text" placeholder="Искать в Зазеркалье" class="search-input" v-model="searchQuery" />
@@ -20,11 +21,11 @@
 
         <!-- Категории -->
         <div class="categories">
-          <div class="category" v-for="subcategory in this.categories" :key="subcategory.id">
+          <div class="category" v-for="subcategory in filteredCategories" :key="subcategory.id">
             <div class="category-header" @click="toggleCategory(subcategory.id)">
               <div>
                 <span>{{ subcategory.name }}&nbsp;</span>
-                <!-- <span>({{ subcategory.elements.length }})</span> -->
+                <span>({{ subcategory.elements.length }})</span>
               </div>
               <span class="collapse-row-icon" :class="{ rotated: subcategory.open }">
                 <img :src="collapseRowIcon" alt="Collapse Row Icon" />
@@ -45,117 +46,104 @@
       </div>
     </div>
     <div class="content">
-      <div v-for="(image, index) in droppedImages" :key="index" class="dropped-image-container"
-        :class="{ active: activeImageId === image.id }" :style="{
-          top: `${image.y}px`,
-          left: `${image.x}px`,
-          zIndex: image.zIndex
-        }" @mousedown="activeImageId = image.id" @mouseenter="activeImageId = image.id">
-
-        <div class='images-buttons'>
-          <img :src="keyIcon" alt="key" @click='keyFun(image.id)'>
-          <img :src="copyIcon" alt="copy" @click='copyImage(image.id)'>
-          <img :src="mirrorIcon" alt="mirror" @click='mirrorFun(image.id)'>
-          <div class='indexIcon'>
-            <img :src="indexIcon" alt="index">
-            <div class="index-block-input">
-              <span class='index-text'>Прозрачность</span>
-              <input type="range" class='index-range' min='0' max='100' step='1'
-                :value="Math.round(image.opacity * 100)" @input="(e) => onChangeOpacity(e, image.id)">
-              <span class='index-procent'>{{ Math.round(image.opacity * 100) }}%</span>
-            </div>
-          </div>
-          <div class='layrs-block'>
-            <img :src="layersIcon" alt="layers">
-            <div class="layers-z-container">
-              <div class="layers-z-block">
-                <img :src="up" alt="up">
-
-                <span class='layers-text' @click.stop="changeZIndex('up', image.id)">Вверх</span>
-
-              </div>
-              <div class="layers-z-block">
-                <img :src="upFull" alt="up">
-
-                <span class='layers-text' @click.stop="changeZIndex('top', image.id)">На передний плане</span>
-
-              </div>
-              <div class="layers-z-block">
-                <img :src="down" alt="up">
-
-                <span class='layers-text' @click.stop="changeZIndex('down', image.id)">Вниз</span>
-
-              </div>
-              <div class="layers-z-block">
-                <img :src="downFull" alt="up">
-                <span class='layers-text' @click.stop="changeZIndex('bottom', image.id)">На задний плане</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="settings-block">
-            <img :src="settingsIcon" alt="settings">
-            <div class="settings-inputs">
-              <div class="settings-inputs-block">
-                <span class='settings-text'>Экспозиция</span>
-                <input type="range" class='settings-input' @input="updateFilter($event, 'exposure')" min="-100"
-                  max="100" :value="activeImage?.filters?.exposure || 0">
-                <span class='settings-number'>{{ activeImage?.filters?.exposure || 0 }}</span>
-              </div>
-              <div class="settings-inputs-block">
-                <span class='settings-text'>Контраст</span>
-                <input type="range" class='settings-input' @input="updateFilter($event, 'contrast')" min="-100"
-                  max="100" :value="activeImage?.filters?.contrast || 0">
-                <span class='settings-number'>{{ activeImage?.filters?.contrast || 0 }}</span>
-              </div>
-              <div class="settings-inputs-block">
-                <span class='settings-text'>Насыщенность</span>
-                <input type="range" class='settings-input' @input="updateFilter($event, 'saturation')" min="-100"
-                  max="100" :value="activeImage?.filters?.saturation || 0">
-                <span class='settings-number'>{{ activeImage?.filters?.saturation || 0 }}</span>
-              </div>
-              <div class="settings-inputs-block">
-                <span class='settings-text'>Температура</span>
-                <input type="range" class='settings-input' @input="updateFilter($event, 'temperature')" min="-100"
-                  max="100" :value="activeImage?.filters?.temperature || 0">
-                <span class='settings-number'>{{ activeImage?.filters?.temperature || 0 }}</span>
-              </div>
-              <div class="settings-inputs-block">
-                <span class='settings-text'>Оттенок</span>
-                <input type="range" class='settings-input' @input="updateFilter($event, 'hue')" min="-100" max="100"
-                  :value="activeImage?.filters?.hue || 0">
-                <span class='settings-number'>{{ activeImage?.filters?.hue || 0 }}</span>
-              </div>
-              <div class="settings-inputs-block">
-                <span class='settings-text'>Светлые области</span>
-                <input type="range" class='settings-input' @input="updateFilter($event, 'highlights')" min="-100"
-                  max="100" :value="activeImage?.filters?.highlights || 0">
-                <span class='settings-number'>{{ activeImage?.filters?.highlights || 0 }}</span>
-              </div>
-              <div class="settings-inputs-block">
-                <span class='settings-text'>Тени</span>
-                <input type="range" class='settings-input' @input="updateFilter($event, 'shadows')" min="-100" max="100"
-                  :value="activeImage?.filters?.shadows || 0">
-                <span class='settings-number'>{{ activeImage?.filters?.shadows || 0 }}</span>
-              </div>
-            </div>
-          </div>
-
+      <div v-if='!shaw.content'>
+        <AppSlides :toggleShaw='toggleShaw' :fotozones='fotozones' />
+      </div>
+      <div v-if='shaw.content'>
+        <div class="utils-block">
+          <img :src="deleteContent" alt="deleteElement">
+          <span class='downloadImage'>скачать изображение</span>
+          <img :src="save" alt="save">
         </div>
+        <AppContentSlides :fotozones='fotozones' :activeSlides='activeSlides' :slidesId='slidesId' />
+        <div v-for="(image, index) in droppedImages" :key="index" class="dropped-image-container"
+          :class="{ active: activeImageId === image.id }" :style="{
+            top: `${image.y}px`,
+            left: `${image.x}px`,
+            zIndex: image.zIndex
+          }" @mousedown="activeImageId = image.id" @mouseenter="activeImageId = image.id">
 
-        <div class='images-utils'>
-          <img :src="deleteImage" @click='deleteImageById(image.id)' alt="deleteImage">
-          <img :src="rotate" alt="rotate" @click='rotateImage(image.id)'>
+          <div class='images-buttons'>
+            <img :src="keyIcon" alt="key" @click='keyFun(image.id)'>
+            <img :src="copyIcon" alt="copy" @click='copyImage(image.id)'>
+            <img :src="mirrorIcon" alt="mirror" @click='mirrorFun(image.id)'>
+            <div class='indexIcon'>
+              <img :src="indexIcon" alt="index">
+              <div class="index-block-input">
+                <span class='index-text'>Прозрачность</span>
+                <input type="range" class='index-range' min='0' max='100' step='1'
+                  :value="Math.round(image.opacity * 100)" @input="(e) => onChangeOpacity(e, image.id)">
+                <span class='index-procent'>{{ Math.round(image.opacity * 100) }}%</span>
+              </div>
+            </div>
+            <div class='layrs-block'>
+              <img :src="layersIcon" alt="layers">
+              <div class="layers-z-container">
+                <div class="layers-z-block">
+                  <img :src="up" alt="up">
+
+                  <span class='layers-text' @click.stop="changeZIndex('up', image.id)">Вверх</span>
+
+                </div>
+                <div class="layers-z-block">
+                  <img :src="upFull" alt="up">
+
+                  <span class='layers-text' @click.stop="changeZIndex('top', image.id)">На передний плане</span>
+
+                </div>
+                <div class="layers-z-block">
+                  <img :src="down" alt="up">
+
+                  <span class='layers-text' @click.stop="changeZIndex('down', image.id)">Вниз</span>
+
+                </div>
+                <div class="layers-z-block">
+                  <img :src="downFull" alt="up">
+                  <span class='layers-text' @click.stop="changeZIndex('bottom', image.id)">На задний плане</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-block">
+              <img :src="settingsIcon" alt="settings">
+              <div class="settings-inputs">
+                <div class="settings-inputs-block" v-for="name in [
+                  'exposure', 'contrast', 'saturation',
+                  'temperature', 'hue', 'highlights', 'shadows'
+                ]" :key="name">
+                  <span class='settings-text'>{{ getFilterLabel(name) }}</span>
+                  <input type="range" class='settings-input' :ref="el => setSliderRef(name, el)"
+                    @input="updateFilter($event, name)" min="-100" max="100" :value="activeImage?.filters?.[name] || 0">
+                  <span class='settings-number'>{{ activeImage?.filters?.[name] || 0 }}</span>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+          <div class='images-utils'>
+            <img :src="deleteImage" @click='deleteImageById(image.id)' alt="deleteImage">
+            <img :src="rotate" alt="rotate" @click='rotateImage(image.id)'>
+          </div>
+
+          <img :src="image.src" alt="Dropped image" class="resizable-image" :style="getImageStyle(image)"
+            @mousedown="startDrag(image, $event)" />
+
+          <!-- Resize handles -->
+          <div class="resize-handle resize-handle-left" @mousedown.stop="startResize(image, $event, 'left')"></div>
+          <div class="resize-handle resize-handle-right" @mousedown.stop="startResize(image, $event, 'right')"></div>
+          <div class="resize-handle resize-handle-top" @mousedown.stop="startResize(image, $event, 'top')"></div>
+          <div class="resize-handle resize-handle-bottom" @mousedown.stop="startResize(image, $event, 'bottom')"></div>
+          <div class="resize-handle resize-handle-top-left" @mousedown.stop="startResize(image, $event, 'top-left')">
+          </div>
+          <div class="resize-handle resize-handle-top-right" @mousedown.stop="startResize(image, $event, 'top-right')">
+          </div>
+          <div class="resize-handle resize-handle-bottom-left"
+            @mousedown.stop="startResize(image, $event, 'bottom-left')"></div>
+          <div class="resize-handle resize-handle-bottom-right"
+            @mousedown.stop="startResize(image, $event, 'bottom-right')"></div>
         </div>
-
-        <img :src="image.src" alt="Dropped image" class="resizable-image" :style="getImageStyle(image)"
-          @mousedown="startDrag(image, $event)" />
-
-        <!-- Resize handles -->
-        <div class="resize-handle resize-handle-left" @mousedown.stop="startResize(image, $event, 'left')"></div>
-        <div class="resize-handle resize-handle-right" @mousedown.stop="startResize(image, $event, 'right')"></div>
-        <div class="resize-handle resize-handle-top" @mousedown.stop="startResize(image, $event, 'top')"></div>
-        <div class="resize-handle resize-handle-bottom" @mousedown.stop="startResize(image, $event, 'bottom')"></div>
       </div>
     </div>
   </div>
@@ -163,7 +151,9 @@
 
 <script>
 import { backgroundIcon, collapseRowIcon, glassIcon } from '@/assets/images/category'
-import { copyIcon, deleteImage, down, downFull, indexIcon, keyIcon, layersIcon, mirrorIcon, rotate, settingsIcon, up, upFull } from '@/assets/images/content'
+import { copyIcon, deleteContent, deleteImage, down, downFull, indexIcon, keyIcon, layersIcon, mirrorIcon, rotate, save, settingsIcon, up, upFull } from '@/assets/images/content'
+
+import { AppContentSlides, AppHeader, AppSlides } from '@/components/index'
 import { mapActions, mapState } from "vuex"
 import { useDrag, useResize } from '../../lib'
 import { updateRangeFill as updateRangeFillUtil } from '../../lib/filter-utils'
@@ -179,6 +169,13 @@ import {
 import { changeZIndex as changeZIndexUtil } from '../../lib/layer-utils'
 
 export default {
+
+  components: {
+    AppHeader,
+    AppSlides,
+    AppContentSlides
+  },
+
   data() {
     return {
       // button images
@@ -192,6 +189,8 @@ export default {
       upFull,
       down,
       downFull,
+      deleteContent,
+      save,
       // utils images
       deleteImage,
       rotate,
@@ -211,7 +210,32 @@ export default {
       isRangeDragging: false,
       // drag and resize
       startDrag: null,
-      startResize: null
+      startResize: null,
+
+      sliderRefs: {
+        exposure: null,
+        contrast: null,
+        saturation: null,
+        temperature: null,
+        hue: null,
+        highlights: null,
+        shadows: null
+      },
+
+      shaw: {
+        content: false,
+        sidebar: false
+      },
+
+      fotozones: [
+        { id: 0, title: 'Выездная регистрация', images: [], settings: {} },
+        { id: 1, title: 'Фотозона', images: [], settings: {} },
+        { id: 2, title: 'Столы гостей', images: [], settings: {} },
+        { id: 3, title: 'План рассадки', images: [], settings: {} },
+        { id: 5, title: 'Другая зона', images: [], settings: {} }
+      ],
+
+      slidesId: null
     }
   },
   computed: {
@@ -228,8 +252,6 @@ export default {
       const currentCategory = this.categories.find(
         (category) => category.name === this.activeIcon
       )
-
-      console.log(this.categories)
       return currentCategory?.subcategories || []
     },
     activeImage() {
@@ -392,33 +414,103 @@ export default {
 
     // При активации изображения обновляем значения ползунков
     updateSliderValues(filters) {
-      const sliderNames = [
-        'exposure', 'contrast', 'saturation',
-        'temperature', 'hue', 'highlights', 'shadows'
-      ]
-
-      sliderNames.forEach((name, index) => {
-        const input = this.$el.querySelectorAll('.settings-input')[index]
-        if (input) {
-          input.value = filters[name]
-          input.nextElementSibling.textContent = filters[name]
-          this.updateRangeFill({ target: input })
-        }
+      this.$nextTick(() => {
+        Object.keys(filters).forEach(name => {
+          const input = this.sliderRefs[name]
+          if (input) {
+            input.value = filters[name]
+            // Находим следующий span с числовым значением
+            const nextSpan = input.nextElementSibling
+            if (nextSpan && nextSpan.classList.contains('settings-number')) {
+              nextSpan.textContent = filters[name]
+            }
+            this.updateRangeFill({ target: input })
+          }
+        })
       })
-    }
-  },
-  watch: {
-    activeImageId(newId) {
-      const image = this.droppedImages.find(img => img.id === newId)
-      if (image) {
-        this.updateSliderValues(image.filters)
+    },
+    getFilterLabel(name) {
+      const labels = {
+        exposure: 'Экспозиция',
+        contrast: 'Контраст',
+        saturation: 'Насыщенность',
+        temperature: 'Температура',
+        hue: 'Оттенок',
+        highlights: 'Светлые области',
+        shadows: 'Тени'
+      }
+      return labels[name] || name
+    },
+    setSliderRef(name, el) {
+      if (el) {
+        this.sliderRefs[name] = el
+      }
+    },
+
+    toggleShaw(id) {
+      this.shaw.content = true
+      this.shaw.sidebar = true
+      this.slidesId = id
+
+      this.droppedImages = []
+
+      const slide = this.fotozones.find(el => el.id === id)
+
+      if (slide) {
+        this.droppedImages = [...slide.images]
+      }
+    },
+
+    activeSlides(newSlideId) {
+      // 1. Сохраняем изменения в текущий слайд
+      if (this.slidesId !== null) {
+        const currentSlide = this.fotozones.find(s => s.id === this.slidesId)
+        if (currentSlide) {
+          currentSlide.images = [...this.droppedImages]
+        }
+      }
+
+      // 2. Переключаемся на новый слайд
+      this.slidesId = newSlideId
+      this.droppedImages = []
+
+      // 3. Загружаем данные нового слайда
+      const newSlide = this.fotozones.find(s => s.id === newSlideId)
+      if (newSlide) {
+        this.droppedImages = [...newSlide.images]
       }
     }
   },
-  created() {
+  mounted() {
     this.fetchCategories()
     this.initDragResize()
+
+    // Инициализация слайдеров после монтирования
+    if (this.activeImageId) {
+      const image = this.droppedImages.find(img => img.id === this.activeImageId)
+      if (image) {
+        this.$nextTick(() => {
+          this.updateSliderValues(image.filters)
+        })
+      }
+    }
+  },
+
+  watch: {
+    activeImageId: {
+      handler(newId) {
+        const image = this.droppedImages.find(img => img.id === newId)
+        if (image) {
+          this.updateSliderValues(image.filters)
+        }
+      },
+      immediate: false
+    },
+    slidesId(newVal) {
+      console.log('Active slide changed to:', newVal)
+    }
   }
+
 }
 </script>
 
@@ -487,6 +579,30 @@ export default {
   cursor: pointer
 }
 
+.utils-block {
+  position: absolute;
+  width: 100%;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+}
+
+.utils-block img {
+  cursor: pointer;
+}
+
+.downloadImage {
+  color: rgba(255, 255, 255, 1);
+  text-transform: uppercase;
+  padding: 13px 20px 13px 20px;
+  background-color: rgba(73, 103, 130, 1);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
 .dropped-image-container {
   position: absolute;
   will-change: transform;
@@ -543,6 +659,41 @@ export default {
 
 .resize-handle-bottom {
   bottom: -2px
+}
+
+.resize-handle-top-left,
+.resize-handle-top-right,
+.resize-handle-bottom-left,
+.resize-handle-bottom-right {
+  width: 12px;
+  height: 12px;
+  background-color: #bbcad8;
+  border-radius: 2px;
+  z-index: 0;
+}
+
+.resize-handle-top-left {
+  top: -6px;
+  left: -6px;
+  cursor: nwse-resize;
+}
+
+.resize-handle-top-right {
+  top: -6px;
+  right: -6px;
+  cursor: nesw-resize;
+}
+
+.resize-handle-bottom-left {
+  bottom: -6px;
+  left: -6px;
+  cursor: nesw-resize;
+}
+
+.resize-handle-bottom-right {
+  bottom: -6px;
+  right: -6px;
+  cursor: nwse-resize;
 }
 
 .images-buttons {
@@ -725,14 +876,13 @@ export default {
   position: relative;
   width: 100%;
   height: 100vh;
-  background-color: #f9f9f9;
+  background-color: rgba(250, 249, 247, 1);
   z-index: 0;
   border-radius: 10px;
 }
 
 .sidebar-menu {
   display: flex;
-  width: 35%;
   height: 100vh;
   border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -796,6 +946,10 @@ export default {
   overflow-y: auto;
   scrollbar-color: #BBCAD8 #fff;
   scrollbar-width: thin;
+  width: 300px;
+  min-width: 300px;
+  max-width: 300px;
+  height: 100vh;
 }
 
 .search-bar {
