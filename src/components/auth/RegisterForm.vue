@@ -207,12 +207,12 @@ export default {
       this.form.phone = `+${this.selectedCountry.code}${this.form.phone}`;
       const response = await this.register(this.form);
       if (store.getters['auth/registrationSuccess']) {
-        this.successMessage = "Регистрация прошла успешно!";
+        this.$router.push({ path: '/dashboard' });
       } else {
-        this.errorMessage = response.result.message;
-        if (response.result.errors) {
-          Object.keys(response.result.errors).forEach((field) => {
-            this.fieldErrors[field] = response.result.errors[field][0];
+        this.errorMessage = response.errors.title;
+        if (response.errors.details) {
+          Object.keys(response.errors.details).forEach((field) => {
+            this.fieldErrors[field] = response.errors.details[field][0];
           });
         }
       }

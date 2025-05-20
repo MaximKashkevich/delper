@@ -1,53 +1,92 @@
 <template>
-	<div class="container">
-		<div class="slides-container" v-for='item in props.fotozones' :key='item.id'>
-			<div @click="props.toggleShaw?.(item.id)" class="block">
-				<img src="@/assets/images/content/plus.svg" alt="plus">
-				<span>{{ item.title }}</span>
+	<div class="slides-container">
+		<div class="slides-grid" ref="slidesGrid">
+			<div v-for="zone in zones" :key="zone.id" class="slide-card" @click="selectZone(zone.id)">
+				<div class="plus-icon">
+					<img src="@/assets/images/content/plus.svg" alt="Добавить">
+				</div>
+				<h3>{{ zone.title }}</h3>
 			</div>
 		</div>
 	</div>
 </template>
 
-<script setup>
-import { defineProps } from 'vue'
-
-const props = defineProps({
-	fotozones: Array,
-	toggleShaw: Function,
-})
+<script>
+export default {
+	props: {
+		zones: {
+			type: Array,
+			required: true
+		}
+	},
+	methods: {
+		selectZone(zoneId) {
+			this.$emit('zone-selected', zoneId)
+			this.$router.push({
+				path: '/dashboard',
+				query: { zone: zoneId }
+			})
+		}
+	}
+}
 </script>
 
 <style scoped>
-.container {
-	display: grid;
-	grid-template-columns: repeat(3, 1fr);
-	/* 3 колонки с равной шириной */
-	gap: 10px;
-	align-items: center;
-	padding: 10px;
+.slides-container {
+	padding: 20px;
+	position: relative;
 }
 
-.block {
-	width: 100%;
-	min-height: 250px;
-	background-color: rgba(255, 255, 255, 1);
+.slides-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	gap: 20px;
+	position: relative;
+	padding: 10px;
+	border-radius: 10px;
+	transition: all 0.3s ease;
+}
+
+.slide-card {
+	background: white;
+	border-radius: 10px;
+	padding: 30px;
+	text-align: center;
 	box-shadow: 0 3px 10px rgba(178, 176, 173, 0.2);
-	/* исправленная тень */
+	cursor: pointer;
+	transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.slide-card:hover {
+	transform: translateY(-5px);
+	box-shadow: 0 5px 15px rgba(178, 176, 173, 0.3);
+}
+
+.plus-icon {
+	width: 60px;
+	height: 60px;
+	margin: 0 auto 15px;
 	display: flex;
-	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	padding: 15px;
-	box-sizing: border-box;
-	border-radius: 10px;
-	gap: 10px;
-	cursor: pointer;
 }
 
-.block span {
+.plus-icon img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+
+.slide-card h3 {
 	font-size: 20px;
-	color: rgba(38, 55, 78, 1);
-	line-height: 120%
+	color: #26374e;
+	margin: 0;
+	font-weight: normal;
+}
+
+@media (max-width: 768px) {
+	.slides-grid {
+		grid-template-columns: 1fr;
+	}
 }
 </style>

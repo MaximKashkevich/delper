@@ -29,28 +29,57 @@ export default {
 	},
 	mutations: {
 		SET_USER(state, user) {
+			console.log('Сохранение пользователя:', user)
 			state.user = user
 			state.isAuthenticated = !!user
+			if (user) {
+				localStorage.setItem('user', JSON.stringify(user))
+			} else {
+				localStorage.removeItem('user')
+			}
 		},
 		CLEAR_USER(state) {
 			state.user = null
 			state.isAuthenticated = false
 		},
-		SET_REGISTRATION_SUCCESS(state, success) {
-			state.registrationSuccess = success
-		},
-		SET_LOGIN_SUCCESS(state, success) {
-			state.loginSuccess = success
-			if (success) {
+		SET_REGISTRATION_SUCCESS(state, data) {
+			state.registrationSuccess = data.success
+			if (data.success) {
 				localStorage.setItem('isAuthenticated', true)
+				localStorage.setItem('userToken', data.result.accessToken)
+			}
+		},
+		SET_LOGIN_SUCCESS(state, data) {
+			state.loginSuccess = data.success
+			if (data.success) {
+				localStorage.setItem('isAuthenticated', true)
+				localStorage.setItem('userToken', data.result.accessToken)
 			}
 		},
 	},
 	actions: {
 		async login({ commit }, credentials) {
-			const response = await login(credentials)
-			commit('SET_LOGIN_SUCCESS', response.success)
-			return response
+			try {
+				const response = await login(credentials)
+				console.log('Полный ответ сервера:', response)
+				if (response.success) {
+					commit('SET_USER', response.result.user)
+					commit('SET_LOGIN_SUCCESS', response)
+				}
+				return response
+			} catch (error) {
+				commit('SET_REGISTRATION_SUCCESS', false)
+
+				if (error.response && error.response.status === 422) {
+					return error.response.data
+				}
+
+				return {
+					success: false,
+					message: 'Произошла ошибка при авторизации',
+					error,
+				}
+			}
 		},
 		async logout({ commit }) {
 			await logout()
@@ -59,15 +88,19 @@ export default {
 		async register({ commit }, formData) {
 			try {
 				const response = await register(formData)
-				commit('SET_REGISTRATION_SUCCESS', response.success)
+				commit('SET_REGISTRATION_SUCCESS', response)
 				return response
 			} catch (error) {
 				commit('SET_REGISTRATION_SUCCESS', false)
+
+				if (error.response && error.response.status === 422) {
+					return error.response.data
+				}
+
 				return {
-					result: {
-						success: false,
-						message: 'Что-то пошло не так',
-					},
+					success: false,
+					message: 'Произошла ошибка при регистрации',
+					error,
 				}
 			}
 		},

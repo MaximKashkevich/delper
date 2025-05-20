@@ -5,6 +5,21 @@ const axiosInstance = axios.create({
     withCredentials: true,
 });
 
+// Добавляем токен в каждый запрос
+axiosInstance.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem("userToken");
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+// Обработка ответа, например редирект при 401
 axiosInstance.interceptors.response.use(
     (response) => response,
     async (error) => {

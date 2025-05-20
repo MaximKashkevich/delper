@@ -1,37 +1,55 @@
 export const useDrag = () => {
-	let draggingImage = null
+	let draggingItem = null
 	let initialPosition = { x: 0, y: 0 }
+	let containerRect = null
 
-	const startDrag = (image, event) => {
-		if (!image.isLocked) {
-			event.preventDefault()
-			draggingImage = image
+	const startDrag = (images, item, event, container) => {
+		if (!event || !container) return
+
+		event.preventDefault()
+
+		if (!item.locked && !item.isBackground) {
+			containerRect = container.getBoundingClientRect()
+
+			draggingItem = item
 			initialPosition = {
 				cursorX: event.clientX,
 				cursorY: event.clientY,
-				imageX: image.x,
-				imageY: image.y,
+				itemX: item.x,
+				itemY: item.y,
 			}
 
 			const handleMove = e => {
-				if (draggingImage) {
-					draggingImage.x =
-						initialPosition.imageX + (e.clientX - initialPosition.cursorX)
+				if (!draggingItem) return
 
-					draggingImage.y =
-						initialPosition.imageY + (e.clientY - initialPosition.cursorY)
+				let newX = initialPosition.itemX + (e.clientX - initialPosition.cursorX)
+				let newY = initialPosition.itemY + (e.clientY - initialPosition.cursorY)
+
+				// Для текстовых элементов учитываем границы контейнера
+				if (draggingItem.type === 'text') {
+					newX = Math.max(
+						0,
+						Math.min(newX, containerRect.width - draggingItem.width)
+					)
+					newY = Math.max(
+						0,
+						Math.min(newY, containerRect.height - draggingItem.height)
+					)
 				}
+
+				draggingItem.x = newX
+				draggingItem.y = newY
 			}
+
 			const endDrag = () => {
 				document.removeEventListener('mousemove', handleMove)
 				document.removeEventListener('mouseup', endDrag)
-				draggingImage = null
+				draggingItem = null
 			}
 
 			document.addEventListener('mousemove', handleMove)
 			document.addEventListener('mouseup', endDrag)
 		}
 	}
-
 	return { startDrag }
 }

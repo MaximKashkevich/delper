@@ -5,12 +5,12 @@
 </template>
 
 <script>
-import Category from "@/components/category/CategoryList";
+import Category from "@/components/category/CategoryList"
 
 export default {
   name: "App",
   components: {
     Category, // Регистрация компонента
   },
-};
+}
 </script>
